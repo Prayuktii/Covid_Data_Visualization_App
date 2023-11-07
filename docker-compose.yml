@@ -1,0 +1,59 @@
+version: '3.8'
+services:
+  db:
+    container_name: db
+    image: mysql:8.0
+    cap_add:
+      - SYS_NICE
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      - MYSQL_DATABASE=coviddeaths
+      - MYSQL_ROOT_PASSWORD=mauFJcuf5dhRMQrjj
+    ports:
+      - '3307:3306'
+    volumes:
+      - db:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+  web:
+    container_name: web
+    build: .
+    image: python:3.11.0a1-alpine3.13
+    ports:
+      - '5000:5000'
+    environment:
+      - DB_USER=root
+      - DB_PASS=mauFJcuf5dhRMQrjj
+      - DB_NAME=coviddeaths
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DEBUG=true
+    depends_on:
+      - db
+  seed-db:
+    container_name: seed-db
+    build: .
+    image: python:3.11.0a1-alpine3.13
+    environment:
+      - DB_USER=root
+      - DB_PASS=mauFJcuf5dhRMQrjj
+      - DB_NAME=coviddeaths
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DEBUG=true
+    
+    depends_on:
+      db:
+        condition: service_healthy
+    
+    command: python seeddb.py
+
+
+    
+volumes:
+  db:
+    driver: local

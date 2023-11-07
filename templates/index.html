@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="/static/plotly-latest.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #plot {
+            width: 800px;
+            height: 600px;
+            display: flex;
+
+        }
+
+        select {
+            width: 800px;
+            height: 25px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+            border-radius: 25px;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 800px;
+            height: 25px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+            border-radius: 25px;
+
+        }
+
+        .slider:hover {
+            opacity: 1;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #04AA6D;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            background: #04AA6D;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>COVID-19 Data Visualization</h1>
+    <h4>Metrics:</h4>
+    <select id="caseType">
+        <option value="tot_cases">Total number of cases</option>
+        <option value="tot_deaths">Total number of deaths</option>
+        <option value="new_cases">Number of new cases</option>
+        <option value="new_deaths">Number of new deaths</option>
+    </select>
+    <h4>Date Slider:</h4>
+
+    <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+    <div id="date"></div>
+    <div id="plot"></div>
+
+    <script>
+        const usaStateAbbreviations = {
+            'AL': 'Alabama',
+            'AK': 'Alaska',
+            'AZ': 'Arizona',
+            'AR': 'Arkansas',
+            'CA': 'California',
+            'CO': 'Colorado',
+            'CT': 'Connecticut',
+            'DE': 'Delaware',
+            'FL': 'Florida',
+            'GA': 'Georgia',
+            'HI': 'Hawaii',
+            'ID': 'Idaho',
+            'IL': 'Illinois',
+            'IN': 'Indiana',
+            'IA': 'Iowa',
+            'KS': 'Kansas',
+            'KY': 'Kentucky',
+            'LA': 'Louisiana',
+            'ME': 'Maine',
+            'MD': 'Maryland',
+            'MA': 'Massachusetts',
+            'MI': 'Michigan',
+            'MN': 'Minnesota',
+            'MS': 'Mississippi',
+            'MO': 'Missouri',
+            'MT': 'Montana',
+            'NE': 'Nebraska',
+            'NV': 'Nevada',
+            'NH': 'New Hampshire',
+            'NJ': 'New Jersey',
+            'NM': 'New Mexico',
+            'NY': 'New York',
+            'NC': 'North Carolina',
+            'ND': 'North Dakota',
+            'OH': 'Ohio',
+            'OK': 'Oklahoma',
+            'OR': 'Oregon',
+            'PA': 'Pennsylvania',
+            'RI': 'Rhode Island',
+            'SC': 'South Carolina',
+            'SD': 'South Dakota',
+            'TN': 'Tennessee',
+            'TX': 'Texas',
+            'UT': 'Utah',
+            'VT': 'Vermont',
+            'VA': 'Virginia',
+            'WA': 'Washington',
+            'WV': 'West Virginia',
+            'WI': 'Wisconsin',
+            'WY': 'Wyoming',
+        };
+        var dates = []
+        const caseType = {
+            tot_cases: "Total number of cases",
+            tot_deaths: "Total number of deaths",
+            new_cases: "Number of new cases",
+            new_deaths: "Number of new deaths"
+        }
+
+        function changeData(type = "tot_cases", date = {
+            "start_date": "2023-05-04",
+            "end_date": "2023-05-10"
+        }) {
+             
+            fetch(`/coviddata?from=${date.start_date}&to=${date.end_date}`)
+                .then(response => response.json()) 
+                .then(jsonData => {
+                    var layout = {
+                        title: `COVID-19 ${caseType[type]} in the US from ${date.start_date} to ${date.end_date}`,
+                        geo: {
+                            scope: 'usa',
+                            showlakes: true,
+                            lakecolor: 'rgb(255, 255, 255)'
+                        }
+                    };
+                    maxValue = Math.max(...jsonData.data.map(each => each[type]));
+                    minValue = Math.min(...jsonData.data.map(each => each[type]));
+                    var data = [{
+                        type: 'choropleth',
+                        locationmode: 'USA-states',
+                        locations: jsonData.data.map(each => each.state),  
+                        z: jsonData.data.map(each => each[type]),
+                        text: jsonData.data.map(each => usaStateAbbreviations[each.state]), 
+                        zmin: minValue,
+                        zmax: maxValue,
+                        autocolorscale: true,
+                        mode: 'text',
+                    }];
+
+                    Plotly.newPlot('plot', data, layout);
+                })
+        }
+
+        function fetchDates() {
+            fetch("/dates")
+                .then(response => response.json())
+                .then(jsonData => {
+                    console.log(jsonData);
+                    dates = jsonData.dates;
+                    rangeSlider = document.getElementById("myRange");
+                    rangeSlider.max = dates.length;
+                    rangeSlider.value = dates.length; 
+
+                    rangeSlider.addEventListener("change", function (e) {
+
+                        e.preventDefault();
+                        changeData(document.getElementById("caseType").value, dates[Number(e.target.value)]) 
+                    });
+
+                })
+        }
+
+        changeData();
+        fetchDates();
+
+        document.getElementById("caseType").addEventListener("change", function (e) {
+            e.preventDefault();
+            rangeSlider = document.getElementById("myRange");
+            val = rangeSlider.value;
+            changeData(e.target.value, dates[Number(val)])
+        });
+
+    </script>
+
+</body>
+
+</html>

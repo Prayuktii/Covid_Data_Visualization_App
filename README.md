@@ -48,7 +48,7 @@ The web interface is created using Flask templates and the Plotly JavaScript pac
 4. Build and run the Docker container.
 
 ```bash
-# To run 
+# To run
 docker-compose build
 docker-compose up
 

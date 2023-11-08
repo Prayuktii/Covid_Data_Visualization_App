@@ -11,7 +11,7 @@ services:
       - MYSQL_DATABASE=coviddeaths
       - MYSQL_ROOT_PASSWORD=mauFJcuf5dhRMQrjj
     ports:
-      - '3307:3306'
+      - '3306:3306'
     volumes:
       - db:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -45,15 +45,15 @@ services:
       - DB_HOST=db
       - DB_PORT=3306
       - DEBUG=true
-    
+
     depends_on:
       db:
         condition: service_healthy
-    
+
     command: python seeddb.py
 
 
-    
+
 volumes:
   db:
     driver: local

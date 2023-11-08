@@ -146,9 +146,9 @@
             "start_date": "2023-05-04",
             "end_date": "2023-05-10"
         }) {
-             
+
             fetch(`/coviddata?from=${date.start_date}&to=${date.end_date}`)
-                .then(response => response.json()) 
+                .then(response => response.json())
                 .then(jsonData => {
                     var layout = {
                         title: `COVID-19 ${caseType[type]} in the US from ${date.start_date} to ${date.end_date}`,
@@ -163,9 +163,9 @@
                     var data = [{
                         type: 'choropleth',
                         locationmode: 'USA-states',
-                        locations: jsonData.data.map(each => each.state),  
+                        locations: jsonData.data.map(each => each.state),
                         z: jsonData.data.map(each => each[type]),
-                        text: jsonData.data.map(each => usaStateAbbreviations[each.state]), 
+                        text: jsonData.data.map(each => usaStateAbbreviations[each.state]),
                         zmin: minValue,
                         zmax: maxValue,
                         autocolorscale: true,
@@ -184,12 +184,12 @@
                     dates = jsonData.dates;
                     rangeSlider = document.getElementById("myRange");
                     rangeSlider.max = dates.length;
-                    rangeSlider.value = dates.length; 
+                    rangeSlider.value = dates.length;
 
                     rangeSlider.addEventListener("change", function (e) {
 
                         e.preventDefault();
-                        changeData(document.getElementById("caseType").value, dates[Number(e.target.value)]) 
+                        changeData(document.getElementById("caseType").value, dates[Number(e.target.value)])
                     });
 
                 })
